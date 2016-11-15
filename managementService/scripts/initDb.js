@@ -29,7 +29,9 @@ db.dbReady.then((db) => {
           critter_b_id TEXT NOT NULL,
           critter_a_won BOOLEAN,
           critter_a_score NUMBER,
-          critter_b_score NUMBER
+          critter_b_score NUMBER,
+          FOREIGN KEY (critter_a_id) REFERENCES critters (id),
+          FOREIGN KEY (critter_b_id) REFERENCES critters (id)
         )`, cb);
       },
     ], (error) => {

@@ -68,7 +68,7 @@ exports.prepareCrittersForBattle = function(dbTransaction, critterAId, critterBI
     return Promise.reject(new UserError("Critter ID's must be different -- can't fight itself"));
   }
 
-  return Promise.promisify(dbTransaction.all, {context: dbTransaction})(
+  return dbTransaction.allAsync(
     'SELECT id, is_out_fighting FROM critters WHERE id = ? OR id = ?',
     [ critterAId, critterBId ]
   ).then(rows => {
@@ -76,7 +76,7 @@ exports.prepareCrittersForBattle = function(dbTransaction, critterAId, critterBI
 
     if (rows.length < 2) {
       return Promise.reject(
-        new UserError(`Invalid critter ID's.  Valid critter ID's: [${rows.map(r => r.id).join(', ')}].`)
+        new UserError(`Invalid critter ID's specified. Valid critter ID's: [${rows.map(r => r.id).join(', ')}].`)
       );
     }
 
@@ -91,7 +91,7 @@ exports.prepareCrittersForBattle = function(dbTransaction, critterAId, critterBI
       );
     }
 
-    return Promise.promisify(dbTransaction.run, {context: dbTransaction})(
+    return dbTransaction.runAsync(
       `UPDATE critters SET is_out_fighting = 1 WHERE is_out_fighting = 0 AND (id = ? OR id = ?)`,
       [ critterAId, critterBId ]
     );
