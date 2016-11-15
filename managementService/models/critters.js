@@ -1,6 +1,9 @@
 "use strict";
 
+const Promise = require('bluebird');
 const uuid = require('node-uuid');
+
+const UserError = require('./UserError');
 const critterCreator = require('./critterCreator');
 
 let db;
@@ -47,6 +50,51 @@ exports.createNewCritter = function(additionalAttributes) {
         })
       );
     });
+  });
+};
+
+/**
+ * Locks two critters as out for a fight, or rejects if critters are invalid or already out for a fight.
+ * @param {Object} dbTransaction
+ * @param {string} critterAId
+ * @param {string} critterBId
+ * @return {Promise}
+ */
+exports.prepareCrittersForBattle = function(dbTransaction, critterAId, critterBId) {
+  critterAId = critterAId.trim();
+  critterBId = critterBId.trim();
+
+  if (critterAId === critterBId) {
+    return Promise.reject(new UserError("Critter ID's must be different -- can't fight itself"));
+  }
+
+  return Promise.promisify(dbTransaction.all, {context: dbTransaction})(
+    'SELECT id, is_out_fighting FROM critters WHERE id = ? OR id = ?',
+    [ critterAId, critterBId ]
+  ).then(rows => {
+    if (rows.length > 2) return Promise.reject(new Error('Unexpected DB state: more than two critters returned!'));
+
+    if (rows.length < 2) {
+      return Promise.reject(
+        new UserError(`Invalid critter ID's.  Valid critter ID's: [${rows.map(r => r.id).join(', ')}].`)
+      );
+    }
+
+    let busyCritters = [];
+    rows.forEach(row => {
+      if (row.is_out_fighting) busyCritters.push(row.id);
+    });
+
+    if (busyCritters.length) {
+      return Promise.reject(
+        new UserError(`One or more critters are already queued up for a fight: ${busyCritters.join(', ')}`)
+      );
+    }
+
+    return Promise.promisify(dbTransaction.run, {context: dbTransaction})(
+      `UPDATE critters SET is_out_fighting = 1 WHERE is_out_fighting = 0 AND (id = ? OR id = ?)`,
+      [ critterAId, critterBId ]
+    );
   });
 };
 

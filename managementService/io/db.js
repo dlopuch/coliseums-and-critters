@@ -7,18 +7,21 @@
  */
 
 const sqlite3 = require('sqlite3');
+const TransactionDatabase = require("sqlite3-transactions").TransactionDatabase;
 
 let db;
 const dbReady = new Promise((resolve, reject) => {
-  db = new sqlite3.Database('./sqlite.db', (error) => {
-    if (error) {
-      let dbFail = new Error('Could not create DB');
-      dbFail.why = error;
-      return reject(error);
-    }
+  db = new TransactionDatabase(
+    new sqlite3.Database('./sqlite.db', (error) => {
+      if (error) {
+        let dbFail = new Error('Could not create DB');
+        dbFail.why = error;
+        return reject(error);
+      }
 
-    resolve(db);
-  });
+      resolve(db);
+    })
+  );
 });
 
 exports.dbReady = dbReady;

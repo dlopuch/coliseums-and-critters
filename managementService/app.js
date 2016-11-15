@@ -32,7 +32,15 @@ app.use(function(req, res, next) {
 // catch-all json error handler
 app.use(function(err, req, res, next) {
   res.status(err.status || 500);
-  res.json({ error: err.message, stack: err.stack, details: err });
+  res.json({
+    error: err.message,
+
+    // Flag for API gateway that this error can be passed up to user
+    userError: err.userError,
+
+    stack: err.stack,
+    details: err
+  });
 });
 
 module.exports = app;
