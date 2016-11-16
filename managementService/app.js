@@ -8,9 +8,15 @@ require('./io/logger');
 const log = require('winston');
 
 require('./io/db').dbReady
-  .then(() => log.info('DB ready'))
-  .catch((error) => log.error('Error initializing DB!', { error: error.stack }));
+.then(() => log.info('DB ready'))
+.catch((error) => log.error('Error initializing DB!', { error: error.stack }));
 
+
+// Message Queue Listeners
+require('./business/battleListeners');
+
+
+// REST api:
 var apiRoutes = require('./routes/api');
 
 var app = express();

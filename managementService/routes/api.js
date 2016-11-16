@@ -2,13 +2,20 @@
 
 const express = require('express');
 const router = express.Router();
+const log = require('winston');
 
 const UserError = require('../models/UserError');
 const battlesModel = require('../models/battles');
 const crittersModel = require('../models/critters');
+const messageQs = require('../io/messageQueues');
 
 let db;
 require('../io/db').dbReady.then(theDb => db = theDb);
+
+let openBattlePub;
+messageQs
+.then(qs => openBattlePub = qs.openBattles.publish)
+.then(ok => log.info('API MW successfully initialized openBattle publisher'));
 
 
 /** Create a new critter */
@@ -35,6 +42,9 @@ router.post('/battle', function(req, res, next) {
   db.beginTransaction((err, dbTransaction) => {
     crittersModel.prepareCrittersForBattle(dbTransaction, critA, critB)
     .then(() => battlesModel.createNewBattle(dbTransaction, critA, critB))
+    .then(battle => {
+      openBattlePub(battle);
+    })
     .then(() => {
       dbTransaction.commit( (error) => {
         if (error) return next(error);
