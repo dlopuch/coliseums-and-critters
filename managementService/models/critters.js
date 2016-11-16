@@ -58,7 +58,7 @@ exports.createNewCritter = function(additionalAttributes) {
  * @param {Object} dbTransaction
  * @param {string} critterAId
  * @param {string} critterBId
- * @return {Promise}
+ * @return {Promise} Resolves with a list of the two critters at "play"
  */
 exports.prepareCrittersForBattle = function(dbTransaction, critterAId, critterBId) {
   critterAId = critterAId.trim();
@@ -67,6 +67,8 @@ exports.prepareCrittersForBattle = function(dbTransaction, critterAId, critterBI
   if (critterAId === critterBId) {
     return Promise.reject(new UserError("Critter ID's must be different -- can't fight itself"));
   }
+
+  let battleCritters = [];
 
   return dbTransaction.allAsync(
     'SELECT id, is_out_fighting FROM critters WHERE id = ? OR id = ?',
@@ -95,6 +97,36 @@ exports.prepareCrittersForBattle = function(dbTransaction, critterAId, critterBI
       `UPDATE critters SET is_out_fighting = 1 WHERE is_out_fighting = 0 AND (id = ? OR id = ?)`,
       [ critterAId, critterBId ]
     );
+  })
+  .then(() => exports.getCritterById(critterAId))
+  .then(critterA => {
+    battleCritters.push(critterA);
+    return exports.getCritterById(critterBId)
+  })
+  .then(critterB => {
+    battleCritters.push(critterB);
+    return Promise.resolve(battleCritters);
   });
 };
 
+/**
+ * Updates a critter after a battle
+ * @param {string} critterId
+ * @param {boolean} didWin Did the critter win the battle?
+ * @param {number} experienceGained How much experience to add
+ * @param {Object} [dbTransaction] Transaction context
+ */
+exports.updateCritterAfterBattle = function(critterId, didWin, experienceGained, dbTransaction) {
+  let dbContext = dbTransaction || db;
+
+  return dbContext.runAsync(
+    `UPDATE critters SET
+       is_out_fighting = 0, 
+       ${didWin ? 'num_wins' : 'num_losses'} = ${didWin ? 'num_wins' : 'num_losses'} + 1,
+       experience = experience + $experienceGained
+     WHERE id = $critterId`,
+    { $critterId: critterId,
+      $experienceGained: experienceGained
+    }
+  );
+};

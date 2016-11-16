@@ -40,11 +40,17 @@ router.post('/battle', function(req, res, next) {
 
   // Here we do the critter lock and the fight creation all inside an atomic transaction
   db.beginTransaction((err, dbTransaction) => {
+    let battlingCritters;
     crittersModel.prepareCrittersForBattle(dbTransaction, critA, critB)
-    .then(() => battlesModel.createNewBattle(dbTransaction, critA, critB))
-    .then(battle => {
-      openBattlePub(battle);
+    .then((critterModels) => {
+      battlingCritters = critterModels;
+      return battlesModel.createNewBattle(dbTransaction, critA, critB)
     })
+    .then(battle => openBattlePub({
+        battle,
+        critters: battlingCritters,
+      })
+    )
     .then(() => {
       dbTransaction.commit( (error) => {
         if (error) return next(error);
@@ -57,7 +63,6 @@ router.post('/battle', function(req, res, next) {
       next(err)
     });
   });
-
 });
 
 module.exports = router;
