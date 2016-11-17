@@ -14,9 +14,11 @@ const utils = require('./utils');
 const promiseManagementService = require('../../app');
 
 
-describe('API:battles', function() {
+describe('battles API and queue', function() {
   let app;
   before('assign app', () => promiseManagementService.then(readyApp => app = readyApp));
+
+  let openBattleMessage;
 
   /**
    * This test checks that when we POST to /battles, we both
@@ -76,7 +78,8 @@ describe('API:battles', function() {
         });
 
         return Promise.all([
-          // Here we register a listener on the job queue and make sure the queue battle message appears
+          // Here we register a listener on the job queue and make sure the queue battle message appears.
+          // This promise gets resolved when we find the expected battle message on the job queue.
           new Promise((resolve, reject) => {
             let gotMessage = false;
             messageQs.openBattles.subscribe(function(message) {
@@ -86,6 +89,7 @@ describe('API:battles', function() {
                     battle,
                     critters: [critterA, critterB]
                   });
+                  openBattleMessage = message; // looks good, use it for the next test
                 } catch(error) {
                   return reject(error);
                 }
@@ -120,4 +124,44 @@ describe('API:battles', function() {
     }); // end executeTestScopedQueues
   }); // end test
 
+
+  it('processes closedBattle message queue', function() {
+    assert.isOk(openBattleMessage, 'Expected an open battle to have been created earlier in test suite');
+
+    return utils.executeWithTestScopedQueues(function(messageQs) {
+      let closedBattleMessage = {
+        battle: openBattleMessage.battle,
+        results: {
+          critter_a_won: true,
+          critter_a_score: 10,
+          critter_b_score: 8
+        }
+      };
+
+      // First clear out the closed battles queue
+      return messageQs.closedBattles.purge()
+
+      // Emulate a closed battle (this is normally CPU-intensive
+      .then(() => messageQs.closedBattles.publish(closedBattleMessage))
+
+      // Listen to the app's event bus to make sure it gets processed
+      .then(() => new Promise((resolve, reject) => {
+        let sawProcessedEvent = false;
+        app.once('processedClosedBattle', function(message) {
+          try {
+            assert.deepEqual(message, closedBattleMessage);
+          } catch(e) {
+            reject(e);
+          }
+
+          sawProcessedEvent = true;
+          resolve();
+        });
+        setTimeout(() => {
+          if (sawProcessedEvent) return;
+          reject(new Error('Timeout exceeded to see processedClosedBattle message on app event bus!'));
+        }, 1000);
+      }));
+    });
+  });
 });

@@ -23,15 +23,15 @@ dbReady
 let messageQueuesReady = require('../common-lib/messageQueues');
 initPromises.push(messageQueuesReady);
 
+var app = express();
 
 // Message Queue Listeners
-require('./business/battleListeners');
+require('./business/battleListeners')(app);
 
 
 // REST api:
 var apiRoutes = require('./routes/api');
 
-var app = express();
 
 app.use(loggerMw('dev'));
 app.use(bodyParser.json());

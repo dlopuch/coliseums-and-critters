@@ -17,6 +17,6 @@ describe('ManagementService', function() {
   });
 
   require('./apiCritters');
-  require('./apiBattles');
+  require('./battlesApiAndQueue');
 
 });
