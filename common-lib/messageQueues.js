@@ -40,21 +40,29 @@ const QUEUE_CHANNEL_DEFNS = [
   {name: 'closedBattles', q: Q_NAME_CLOSED_BATTLES, consumeOpts: { noAck: false }} // Subscribers need to ack closing a battle
 ];
 
-const queues = {};
+let mqConnection = amqp.connect(AMQP_URI);
 
-let initQueueChannels = amqp.connect(AMQP_URI)
-.then(conn => Promise.map(
-  QUEUE_CHANNEL_DEFNS,
-  qDefn => {
-    return conn.createChannel()
-    .then(ch => {
+function promiseNewQueuesChannel() {
+  let queues = {};
+
+  return mqConnection
+  .then(conn => conn.createChannel())
+  .then(ch => {
+    // Expose channel controls
+    queues.close = ch.close.bind(ch);
+
+    return ch;
+  })
+  .then(ch => Promise.map(
+    QUEUE_CHANNEL_DEFNS,
+    qDefn => {
       ch.on('error', error => log.error('Message queue channel threw an error!', {
         queueChannelDefn: qDefn,
         error: error
       }));
 
       return ch
-      .assertQueue(qDefn.q, { durable: process.env.NODE_ENV === 'production' /* survive broker restarts */ })
+      .assertQueue(qDefn.q, {durable: process.env.NODE_ENV === 'production' /* survive broker restarts */})
       .then(ok => {
         log.debug('Setting queues for ' + qDefn);
         queues[qDefn.name] = {
@@ -68,15 +76,25 @@ let initQueueChannels = amqp.connect(AMQP_URI)
             ),
             qDefn.consumeOpts
           ),
-          ack: ch.ack.bind(ch)
+          ack: ch.ack.bind(ch),
+          get: ch.get.bind(ch, qDefn.q),
+          purge: ch.purgeQueue.bind(ch, qDefn.q),
         }
       });
-    });
-  }
-))
-.then(() => Promise.resolve(queues));
+    })
+  )
+  .then(() => Promise.resolve(queues));
+}
 
-module.exports = initQueueChannels;
+module.exports = promiseNewQueuesChannel()
+.then(queues => {
+  // Allow opening of a new set of channels (eg try different connections in same process, to easily kill all subscribed
+  // consumers, etc.)
+  queues.promiseNewQueuesChannel = promiseNewQueuesChannel;
 
-initQueueChannels
-.catch(error => log.error('Error initializing amqp queue channels', { error }));
+  return Promise.resolve(queues)
+  .catch(error => {
+    log.error('Error initializing initial amqp queue channels', { error });
+    return Promise.reject(error);
+  });
+});

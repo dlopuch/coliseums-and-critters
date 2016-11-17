@@ -7,7 +7,7 @@ const log = require('winston');
 const UserError = require('../models/UserError');
 const battlesModel = require('../models/battles');
 const crittersModel = require('../models/critters');
-const messageQs = require('../io/messageQueues');
+const messageQs = requireCommon('messageQueues');
 
 let db;
 require('../io/db').dbReady.then(theDb => db = theDb);
@@ -41,12 +41,15 @@ router.post('/battle', function(req, res, next) {
   // Here we do the critter lock and the fight creation all inside an atomic transaction
   db.beginTransaction((err, dbTransaction) => {
     let battlingCritters;
+    let battle;
+
     crittersModel.prepareCrittersForBattle(dbTransaction, critA, critB)
     .then((critterModels) => {
       battlingCritters = critterModels;
       return battlesModel.createNewBattle(dbTransaction, critA, critB)
     })
-    .then(battle => openBattlePub({
+    .then(theBattle => battle = theBattle)
+    .then(() => openBattlePub({
         battle,
         critters: battlingCritters,
       })
@@ -55,7 +58,7 @@ router.post('/battle', function(req, res, next) {
       dbTransaction.commit( (error) => {
         if (error) return next(error);
 
-        res.json('ok');
+        res.json(battle);
       });
     })
     .catch(err => {

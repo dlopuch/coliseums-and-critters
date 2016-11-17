@@ -3,7 +3,6 @@
 const Promise = require('bluebird');
 const uuid = require('node-uuid');
 
-const rabbitMqConnection = require('../io/messageQueues');
 const UserError = require('./UserError');
 
 let db;

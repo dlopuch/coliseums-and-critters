@@ -20,5 +20,9 @@
     "sqlite": "^2.2.3",
     "sqlite3-transactions": "0.0.5",
     "winston": "^2.3.0"
+  },
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "supertest": "^2.0.1"
   }
 }

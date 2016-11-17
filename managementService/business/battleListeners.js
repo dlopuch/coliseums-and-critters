@@ -1,7 +1,7 @@
 "use strict";
 
 const log = require('winston');
-const messageQs = require('../io/messageQueues');
+const messageQs = requireCommon('messageQueues');
 
 const battlesModel = require('../models/battles');
 const crittersModel = require('../models/critters');
@@ -29,7 +29,8 @@ function enableLoopbackStrengthBattles() {
   }))
   .then(ok => log.info('battles businessLogic successfully enabled loopback strength battles'));
 }
-enableLoopbackStrengthBattles();  // TODO: disable
+// TODO: Enable for testing?
+// enableLoopbackStrengthBattles();
 
 
 function calculateExperienceFromBattleResults(closedBattleMessage) {

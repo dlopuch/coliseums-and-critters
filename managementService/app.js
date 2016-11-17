@@ -3,13 +3,25 @@ var path = require('path');
 var loggerMw = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
+const Promise = require('bluebird');
+
+// Better require naming
+global.requireCommon = name => require(__dirname + '/../common-lib/' + name);
+
+const initPromises = [];
 
 require('./io/logger');
 const log = require('winston');
 
-require('./io/db').dbReady
+let dbReady = require('./io/db').dbReady;
+initPromises.push(dbReady);
+
+dbReady
 .then(() => log.info('DB ready'))
 .catch((error) => log.error('Error initializing DB!', { error: error.stack }));
+
+let messageQueuesReady = require('../common-lib/messageQueues');
+initPromises.push(messageQueuesReady);
 
 
 // Message Queue Listeners
@@ -49,4 +61,6 @@ app.use(function(err, req, res, next) {
   });
 });
 
-module.exports = app;
+
+// Export the app when all initializations are ready
+module.exports = Promise.all(initPromises).then(() => app);
