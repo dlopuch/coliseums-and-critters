@@ -41,7 +41,7 @@ Several endpoints are implemented:
 
 The services communicate through queues running on a RabbitMQ message queue server.
 RabbitMQ adds resiliency against service failure and provides a scaling mechanism:
-- Manny coliseumService workers can be instantiated.  All will connect to the RabbitMQ
+- Many coliseumService workers can be instantiated.  All will connect to the RabbitMQ
   server, and RabbitMQ has various tunable parameters around message scheduling (we use 
   default round-robin)
 - Messages need to be acknowledged when work on them is complete.  If a worker fails or times out,
@@ -58,8 +58,8 @@ Two message queues are implemented for inter-service communication:
   - Messages are published by the `coliseumService` and consumed by the `managementService`
   
 # Tests
-## Initialize common-lib
-*TESTS PREREQ:* Before running any tests, initialize common-lib:
+## Pre-req: Initialize common-lib
+**TESTS PREREQ:** Before running any tests, initialize common-lib:
 - `cd common-lib`
 - `npm install`
   
