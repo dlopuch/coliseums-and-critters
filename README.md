@@ -58,6 +58,11 @@ Two message queues are implemented for inter-service communication:
   - Messages are published by the `coliseumService` and consumed by the `managementService`
   
 # Tests
+## Initialize common-lib
+*TESTS PREREQ:* Before running any tests, initialize common-lib:
+- `cd common-lib`
+- `npm install`
+  
 ## managementService
 The managementService implements API integration tests that test the API, database, and queue processing.
  The tests hit the managementService endpoints and using mock publishers and consumers on the message queues,
@@ -90,6 +95,9 @@ To run:
   - `npm run integration-test`
   
 # Running Processes Manually
+- PRE-REQ: common
+  - `cd common-lib`
+  - `npm install`
 - managementService:
   - `cd managementService;`
   - One-time init: `npm install; npm run init-db;`
