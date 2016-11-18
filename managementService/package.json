@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "start": "node ./bin/www",
-    "init-db": "rm sqlite.db; node scripts/initDb.js"
+    "init-db": "rm sqlite.db; node scripts/initDb.js",
+    "test": "mocha test/api"
   },
   "dependencies": {
     "amqplib": "^0.5.1",

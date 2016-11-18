@@ -1,0 +1,22 @@
+{
+  "name": "coliseums-and-critters",
+  "version": "1.0.0",
+  "description": "A brutish API where critters are conjured into existance and forced to battle each other in a coliseum service.",
+  "scripts": {
+    "integration-test": "mocha integration-test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dlopuch/coliseums-and-critters.git"
+  },
+  "author": "Dan Lopuch (http://www.onafloatingrock.com)",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/dlopuch/coliseums-and-critters/issues"
+  },
+  "homepage": "https://github.com/dlopuch/coliseums-and-critters#readme",
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "supertest": "^2.0.1"
+  }
+}
