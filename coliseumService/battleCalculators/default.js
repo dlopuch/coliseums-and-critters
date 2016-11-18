@@ -64,6 +64,6 @@ module.exports = function(openBattleMessage) {
     // That was expensive.  Give the CPU some time to cool down.
     setTimeout(() => {
       resolve(result)
-    }, 5000);
+    }, 3000);
   });
 };

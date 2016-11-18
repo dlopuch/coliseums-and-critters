@@ -18,7 +18,7 @@ log.configure({
   ]
 });
 
-promiseMessageQs
+module.exports = promiseMessageQs
 .then(messageQs => messageQs.openBattles.subscribe(function(openBattleMessage) {
   log.info('Received an openBattleMessage, starting to process', { openBattleMessage });
 
@@ -42,5 +42,8 @@ promiseMessageQs
   });
 }))
 .then(() => log.info('coliseumService successfully subscribed to message queue and ready to go'))
-.catch(error => log.error('coliseumService could not initialize or subscribe to message queue', { error }));
+.catch(error => {
+  log.error('coliseumService could not initialize or subscribe to message queue', { error: error.stack });
+  throw error;
+});
 

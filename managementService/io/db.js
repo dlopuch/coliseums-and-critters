@@ -15,7 +15,7 @@ let db;
 let transactionDb;
 const dbReady = new Promise((resolve, reject) => {
   db = Promise.promisifyAll(
-      new sqlite3.Database('./sqlite.db', (error) => {
+      new sqlite3.Database(`${__dirname}/../sqlite.db`, (error) => {
         if (error) {
           let dbFail = new Error('Could not create DB');
           dbFail.why = error;

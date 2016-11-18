@@ -1,7 +1,7 @@
 "use strict";
 
 function generateAttribute() {
-  return Math.floor(Math.random() * 10);
+  return 1 + Math.floor(Math.random() * 10);
 }
 
 module.exports = function(additionalAttributes) {
