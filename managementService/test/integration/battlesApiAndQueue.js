@@ -19,6 +19,7 @@ describe('battles API and queue', function() {
   before('assign app', () => promiseManagementService.then(readyApp => app = readyApp));
 
   let openBattleMessage;
+  let closedBattleMessage;
 
   /**
    * This test checks that when we POST to /battles, we both
@@ -129,7 +130,7 @@ describe('battles API and queue', function() {
     assert.isOk(openBattleMessage, 'Expected an open battle to have been created earlier in test suite');
 
     return utils.executeWithTestScopedQueues(function(messageQs) {
-      let closedBattleMessage = {
+      closedBattleMessage = {
         battle: openBattleMessage.battle,
         results: {
           critter_a_won: true,
@@ -162,6 +163,59 @@ describe('battles API and queue', function() {
           reject(new Error('Timeout exceeded to see processedClosedBattle message on app event bus!'));
         }, 1000);
       }));
+    });
+  });
+
+
+  it('marks critters as experienced after a closedBattle message', function() {
+    assert.isOk(openBattleMessage, 'Expected test suite to have set openBattleMessage');
+    assert.isOk(closedBattleMessage, 'Expected test suite to have set closedBattleMessage');
+
+    return new Promise((resolve, reject) => {
+      request(app)
+      .get(`/api/critter/${openBattleMessage.critters[0].id}`)
+      .expect(200)
+      .expect(function(res) {
+        assert.equal(res.body.id, openBattleMessage.critters[0].id);
+        assert.isAbove(res.body.experience, 0);
+        assert.equal(res.body.is_out_fighting, 0);
+        assert.equal(res.body.num_wins, 1);
+        assert.equal(res.body.num_losses, 0);
+      })
+      .end((error) => error ? reject(error) : resolve());
+    })
+    .then(() => new Promise((resolve, reject) => {
+      request(app)
+      .get(`/api/critter/${openBattleMessage.critters[1].id}`)
+      .expect(200)
+      .expect(function(res) {
+        assert.equal(res.body.id, openBattleMessage.critters[1].id);
+        assert.isAbove(res.body.experience, 0);
+        assert.equal(res.body.is_out_fighting, 0);
+        assert.equal(res.body.num_wins, 0);
+        assert.equal(res.body.num_losses, 1);
+      })
+      .end((error) => error ? reject(error) : resolve());
+    }));
+  });
+
+
+  it('marks battle as complete after a closedBattle message', function() {
+    assert.isOk(openBattleMessage, 'Expected test suite to have set openBattleMessage');
+    assert.isOk(closedBattleMessage, 'Expected test suite to have set closedBattleMessage');
+
+    return new Promise((resolve, reject) => {
+      request(app)
+      .get(`/api/battle/${openBattleMessage.battle.id}`)
+      .expect(200)
+      .expect(function(res) {
+        assert.equal(res.body.id, openBattleMessage.battle.id);
+        assert.equal(res.body.is_in_progress, 0);
+        assert.equal(res.body.critter_a_score, closedBattleMessage.results.critter_a_score);
+        assert.equal(res.body.critter_b_score, closedBattleMessage.results.critter_b_score);
+        assert.equal(res.body.critter_a_won, 1);
+      })
+      .end((error) => error ? reject(error) : resolve());
     });
   });
 });

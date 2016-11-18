@@ -1,0 +1,14 @@
+{
+  "name": "coliseum-service",
+  "version": "0.0.1",
+  "description": "Performs critter battles",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Dan Lopuch (http://www.onafloatingrock.com)",
+  "license": "GPL-3.0",
+  "dependencies": {
+    "winston": "^2.3.0"
+  }
+}

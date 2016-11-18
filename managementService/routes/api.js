@@ -17,6 +17,12 @@ messageQs
 .then(qs => openBattlePub = qs.openBattles.publish)
 .then(ok => log.info('API MW successfully initialized openBattle publisher'));
 
+/** Gets a critter with a specific ID */
+router.get('/critter/:id', function(req, res, next) {
+  crittersModel.getCritterById(req.params.id)
+  .then(critter => res.json(critter))
+  .catch(error => next(error));
+});
 
 /** Create a new critter */
 router.post('/critter', function(req, res, next) {
